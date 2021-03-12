@@ -24,27 +24,30 @@ import java.util.UUID;
 public class MainController {
     @Value(("${upload.path}"))
     private String uploadPath;
-  @Autowired
+    @Autowired
     MessageRepo messageRepo;
+
     @GetMapping("/")
     public String greeting(Map<String, Object> model) {
         return "greeting";
     }
+
     @GetMapping("/main")
     public String main(@RequestParam(required = false, defaultValue = " ") String filter, Model model){
+        Iterable<Messages> messages = null;
 
-        Iterable<Messages> messages =null;
-
-        if (filter.isEmpty()&&!filter.isEmpty()){
+        if (filter.isEmpty() && !filter.isEmpty()){
             messages = messageRepo.findByTag(filter);
-        }else {
+        } else {
             messages = messageRepo.findAll();
         }
+        
         model.addAttribute("messages", messages);
         model.addAttribute("filter", filter);
 
         return "main";
     }
+    
     @PostMapping("/main")
     public String  saveMessage(@AuthenticationPrincipal User user,
                                @Valid Messages message,
@@ -53,15 +56,17 @@ public class MainController {
                                Model  model) throws IOException {
         message.setAuthor(user);
         if (bindingResult.hasErrors()){
-                      Map<String, String> errorMap = ControllerUtills.getErrors(bindingResult);
+            Map<String, String> errorMap = ControllerUtills.getErrors(bindingResult);
             model.mergeAttributes(errorMap);
             model.addAttribute("message", message);
-        }else {
+        } else {
             if (file != null && !file.getOriginalFilename().isEmpty()) {
                 File uploadDire = new File(uploadPath);
+
                 if (!uploadDire.exists()) {
                     uploadDire.mkdir();
                 }
+
                 String uidFile = UUID.randomUUID().toString();
                 String resultFileName = uidFile + "." + file.getOriginalFilename();
                 file.transferTo(new File(uploadPath + "/" + resultFileName));
@@ -72,11 +77,10 @@ public class MainController {
             model.addAttribute("message", null);
             messageRepo.save(message);
         }
+
         Iterable<Messages> messages = messageRepo.findAll();
         model.addAttribute("messages", messages);
         return "main";
     }
-
-
 }
 
